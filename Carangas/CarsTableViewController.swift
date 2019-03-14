@@ -10,25 +10,38 @@ import UIKit
 class CarsTableViewController: UITableViewController {
     
     var cars: [Car] = []
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        refreshControl?.addTarget(self, action: #selector(loadCars), for: UIControl.Event.valueChanged)
+      
+        
+        
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         print("Recuperando Carros")
+        loadCars()
+        
+    }
+    
+    @objc func loadCars() {
+        
         REST.loadCars { [weak self](loadedCars) in
             guard let self = self else{return}
             self.cars = loadedCars
             
             DispatchQueue.main.async {
-               self.tableView.reloadData()
+                self.tableView.reloadData()
+                self.refreshControl?.endRefreshing()
             }
             
             
         }
-       
+        
+        
+        
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -40,11 +53,11 @@ class CarsTableViewController: UITableViewController {
     }
     
     // MARK: - Table view data source
-
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return cars.count
     }
-
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         let car = cars[indexPath.row]
@@ -59,13 +72,16 @@ class CarsTableViewController: UITableViewController {
             
             REST.applyOperation(.delete, car: car) { ( success) in
                 if  success {
+                    self.cars.remove(at: indexPath.row)
                     DispatchQueue.main.async {
+                        
                         tableView.deleteRows(at: [indexPath], with: .automatic)
                     }
-                   
+                    
                 }
             }
             
         }
     }
 }
+
